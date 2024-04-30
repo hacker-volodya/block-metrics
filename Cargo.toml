@@ -1,0 +1,18 @@
+[package]
+name = "block-metrics"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ton_liteapi = { git = "https://github.com/tonstack/lite-client", branch = "async" }
+ton_networkconfig = { git = "https://github.com/tonstack/lite-client", branch = "async" }
+adnl = { git = "https://github.com/tonstack/adnl-rs", branch = "server" }
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.4.13", features = ["make", "util", "buffer"] }
+tokio-util = "0.7.10"
+ton_types = { git = "https://github.com/broxus/ton-labs-types.git" }
+ton_block = { git = "https://github.com/broxus/ton-labs-block.git", features = ["ton"] }
+axum = "0.7.2"
+anyhow = "1.0"
+prometheus = "0.13.3"
+tokio-tower = "0.6.0"
