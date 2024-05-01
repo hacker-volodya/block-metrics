@@ -178,6 +178,7 @@ version = "0.1.0"
 dependencies = [
  "adnl",
  "anyhow",
+ "async-trait",
  "axum",
  "prometheus",
  "tokio",

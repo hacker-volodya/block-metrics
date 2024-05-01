@@ -1,3 +1,6 @@
+mod block_fetcher;
+mod web;
+
 use adnl::{AdnlPeer, AdnlRawPublicKey};
 use tokio_tower::multiplex;
 use ton_liteapi::layers::WrapMessagesLayer;
