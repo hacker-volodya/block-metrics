@@ -13,6 +13,6 @@ RUN cargo build --release
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/block-fetcher /usr/local/bin
+COPY --from=builder /app/target/release/block-metrics /usr/local/bin
 EXPOSE 3000
-ENTRYPOINT ["/usr/local/bin/block-fetcher"]
+ENTRYPOINT ["/usr/local/bin/block-metrics"]
