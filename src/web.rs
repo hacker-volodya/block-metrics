@@ -16,7 +16,7 @@ use crate::metrics::BlockMetrics;
 
 pub async fn run(metrics: Arc<RwLock<BlockMetrics>>) -> Result<()> {
     let app = Router::new()
-        .route("/", get(get_metrics))
+        .route("/metrics", get(get_metrics))
         .with_state(Arc::new(AppState { metrics }));
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tokio::spawn(async move {
