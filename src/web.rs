@@ -2,24 +2,22 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use axum::{
-    body::{Body, Bytes},
+    body::Body,
     extract::State,
     http::{Response, StatusCode},
     response::IntoResponse,
-    routing::{get, post},
+    routing::get,
     Router,
 };
 use prometheus::{core::Collector, Encoder, TextEncoder};
 use tokio::sync::RwLock;
-use ton_indexer::Engine;
 
 use crate::metrics::BlockMetrics;
 
-pub async fn run(metrics: Arc<RwLock<BlockMetrics>>, engine: Arc<Engine>) -> Result<()> {
+pub async fn run(metrics: Arc<RwLock<BlockMetrics>>) -> Result<()> {
     let app = Router::new()
         .route("/", get(get_metrics))
-        .route("/sendboc", post(send_boc))
-        .with_state(Arc::new(AppState { metrics, engine }));
+        .with_state(Arc::new(AppState { metrics }));
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tokio::spawn(async move {
         axum::serve(listener, app).await.unwrap();
@@ -29,7 +27,6 @@ pub async fn run(metrics: Arc<RwLock<BlockMetrics>>, engine: Arc<Engine>) -> Res
 
 struct AppState {
     metrics: Arc<RwLock<BlockMetrics>>,
-    engine: Arc<Engine>,
 }
 
 async fn get_metrics(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse, AppError> {
@@ -40,15 +37,6 @@ async fn get_metrics(State(state): State<Arc<AppState>>) -> Result<impl IntoResp
     encoder.encode(&metrics, &mut buffer)?;
     let response = String::from_utf8(buffer)?;
     Ok(response)
-}
-
-async fn send_boc(
-    State(state): State<Arc<AppState>>,
-    body: Bytes,
-) -> Result<impl IntoResponse, AppError> {
-    state.engine.broadcast_external_message(0, &body)?;
-    state.engine.broadcast_external_message(-1, &body)?;
-    Ok("ok")
 }
 
 struct AppError(anyhow::Error);
