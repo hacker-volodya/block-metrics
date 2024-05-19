@@ -137,7 +137,7 @@ impl AccountBlockMetrics {
         )?;
         let hist_vec = HistogramVec::new(
             HistogramOpts::new("account_block_tx_latency", "ShardAccountBlocks transactions latency histogram (seconds from imported message utime to transaction utime)")
-                    .buckets(vec![0., 5., 10., 15., 20., 30., 60., 120., 300., 600., 1800., 3600.])
+                    .buckets(vec![0., 5., 10., 15., 20., 30., 40., 50., 60., 70., 80., 90., 100., 110., 120., 150., 180., 210., 240., 270., 300., 360., 420., 480., 540., 600., 900., 1200., 1500., 1800., 2400., 3000., 3600.])
             , &["shard"])?;
         let shard = shard.to_string();
         Ok(Self {
