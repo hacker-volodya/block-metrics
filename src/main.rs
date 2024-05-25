@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
     let config: ConfigGlobal = ConfigGlobal::from_str(&config_json)?;
     let metrics = Arc::new(RwLock::new(BlockMetrics::new()?));
     let subscriber = Subscriber::new(metrics.clone());
-    let fetcher = BlockFetcher::new(config, subscriber);
+    let fetcher = BlockFetcher::new(config, subscriber, 50);
     web::run(metrics).await?;
     loop {
         tracing::info!("Starting fetch...");

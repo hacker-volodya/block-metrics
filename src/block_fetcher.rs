@@ -21,16 +21,17 @@ pub trait BlockSubscriber {
 pub struct BlockFetcher<S: BlockSubscriber> {
     subscriber: S,
     nodes: Vec<Arc<Mutex<Node>>>,
+    max_shard_depth: u32,
 }
 
 impl<S: BlockSubscriber> BlockFetcher<S> {
-    pub fn new(config: ConfigGlobal, subscriber: S) -> Self {
+    pub fn new(config: ConfigGlobal, subscriber: S, max_shard_depth: u32) -> Self {
         let mut nodes = Vec::new();
         for liteserver in config.liteservers.iter() {
             let ConfigPublicKey::Ed25519 { key } = liteserver.id;
             nodes.push(Arc::new(Mutex::new(Node::new(key, liteserver.socket_addr()))));
         }
-        Self { nodes, subscriber }
+        Self { nodes, subscriber, max_shard_depth }
     }
 
     fn concurrent_query<T: Send + 'static, Fut: Send + 'static + Future<Output=Result<T>>, F: Fn(Arc<Mutex<Node>>) -> Fut>(&self, f: F) -> impl Stream<Item = Result<T>> {
@@ -128,31 +129,31 @@ impl<S: BlockSubscriber> BlockFetcher<S> {
         let mut fetched_blocks = Vec::new();
         let traverse_old_blocks = !visited.is_empty();
         for (ident, desc) in shards {
-            to_visit.push_back(BlockIdExt {
+            to_visit.push_back((0u32, BlockIdExt {
                 workchain: ident.workchain_id(),
                 shard: ident.shard_prefix_with_tag(),
                 seqno: desc.seq_no,
                 root_hash: Int256(*desc.root_hash.as_array()),
                 file_hash: Int256(*desc.file_hash.as_array()),
-            });
+            }));
         }
-        let shards_last_seqno = HashSet::from_iter(to_visit.clone().into_iter());
-        while let Some(block_id) = to_visit.pop_front() {
+        let shards_last_seqno = HashSet::from_iter(to_visit.clone().into_iter().map(|x| x.1));
+        while let Some((depth, block_id)) = to_visit.pop_front() {
             if visited.contains(&block_id) {
                 continue
             }
             let block = self.get_block(&block_id).await?;
-            let shard_latency = UnixTime32::now().as_u32() - block.read_info()?.gen_utime().as_u32();
-            if shard_latency - latency > 30 {
+            if depth > self.max_shard_depth {
                 tracing::warn!("possible shard leak!");
                 continue
             }
+            let shard_latency = UnixTime32::now().as_u32() - block.read_info()?.gen_utime().as_u32();
             tracing::info!(latency=shard_latency, id=%block_id, "received shard block");
             if traverse_old_blocks {
                 visited.insert(block_id);
                 for id in Self::get_parents(&block)? {
                     if !visited.contains(&id) {
-                        to_visit.push_back(id);
+                        to_visit.push_back((depth + 1, id));
                     }
                 }
             }
