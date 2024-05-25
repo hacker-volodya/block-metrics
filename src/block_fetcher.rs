@@ -4,7 +4,7 @@ use adnl::{AdnlPeer, AdnlRawPublicKey};
 use tokio::{net::TcpStream, sync::Mutex};
 use tokio_tower::multiplex::{self, Client};
 use ton_block::{Block, Deserializable, ShardDescr, ShardIdent, UnixTime32};
-use ton_liteapi::{layers::{WrapMessagesLayer, WrapService}, peer::LitePeer, tl::{adnl::Message, common::{BlockId, BlockIdExt, Int256}, request::{GetBlock, LookupBlock, Request, WaitMasterchainSeqno, WrappedRequest}, response::Response}};
+use ton_liteapi::{layers::{WrapMessagesLayer, WrapService}, peer::LitePeer, tl::{adnl::Message, common::{BlockId, BlockIdExt, Int256}, request::{GetBlock, LookupBlock, Request, WaitMasterchainSeqno, WrappedRequest}, response::Response}, types::LiteError};
 use ton_networkconfig::{ConfigGlobal, ConfigPublicKey};
 use anyhow::{Result, anyhow};
 use ton_types::deserialize_tree_of_cells;
@@ -216,7 +216,13 @@ impl Node {
 
     async fn call(&mut self, req: WrappedRequest) -> Result<Response> {
         let ready_service = self.connect().await?.ready().await?;
-        Ok(ready_service.call(req.clone()).await?)
+        let result = ready_service.call(req).await;
+        match result {
+            // force reconnect if there is transport errors
+            Err(LiteError::AdnlError(_) | LiteError::TlError(_) | LiteError::UnknownError(_)) => self.service = None,
+            _ => ()
+        }
+        Ok(result?)
     }
 
     pub async fn get_latest_mc_block_id(&mut self) -> Result<BlockIdExt> {
