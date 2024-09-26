@@ -1804,7 +1804,7 @@ dependencies = [
 [[package]]
 name = "ton_block"
 version = "1.9.73"
-source = "git+https://github.com/broxus/ton-labs-block.git#44824b29903dfd556332e720fa932eabe1917f39"
+source = "git+https://github.com/hacker-volodya/ton-labs-block.git#9543f6afb9341fcea2457353f3ae7034f86b821c"
 dependencies = [
  "anyhow",
  "base64 0.13.1",

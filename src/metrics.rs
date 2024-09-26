@@ -187,6 +187,8 @@ pub struct InMsgMetrics {
     transit_counter: IntCounter,
     discarded_final_counter: IntCounter,
     discarded_transit_counter: IntCounter,
+    deferred_final_counter: IntCounter,
+    deferred_transit_counter: IntCounter,
 }
 
 impl InMsgMetrics {
@@ -205,6 +207,10 @@ impl InMsgMetrics {
             vec.get_metric_with_label_values(&[&shard, "Discarded Final"])?;
         let discarded_transit_counter =
             vec.get_metric_with_label_values(&[&shard, "Discarded Transit"])?;
+        let deferred_final_counter =
+            vec.get_metric_with_label_values(&[&shard, "Deffered Final"])?;
+        let deferred_transit_counter =
+            vec.get_metric_with_label_values(&[&shard, "Deffered Transit"])?;
         Ok(Self {
             counter_vec: vec,
             external_counter,
@@ -214,6 +220,8 @@ impl InMsgMetrics {
             transit_counter,
             discarded_final_counter,
             discarded_transit_counter,
+            deferred_final_counter,
+            deferred_transit_counter,
         })
     }
 
@@ -228,6 +236,8 @@ impl InMsgMetrics {
                 InMsg::Transit(_) => &self.transit_counter,
                 InMsg::DiscardedFinal(_) => &self.discarded_final_counter,
                 InMsg::DiscardedTransit(_) => &self.discarded_transit_counter,
+                InMsg::DeferredFinal(_) => &self.deferred_final_counter,
+                InMsg::DeferredTransit(_) => &self.deferred_transit_counter,
             };
             counter.inc();
             Ok(true)
@@ -257,6 +267,8 @@ pub struct OutMsgMetrics {
     dequeue: IntCounter,
     dequeue_short: IntCounter,
     transit_requeued: IntCounter,
+    new_defer: IntCounter,
+    deferred_transit_counter: IntCounter,
 }
 
 impl OutMsgMetrics {
@@ -274,6 +286,8 @@ impl OutMsgMetrics {
         let dequeue = vec.get_metric_with_label_values(&[&shard, "Dequeue"])?;
         let dequeue_short = vec.get_metric_with_label_values(&[&shard, "Dequeue Short"])?;
         let transit_requeued = vec.get_metric_with_label_values(&[&shard, "Transit Requeued"])?;
+        let new_defer = vec.get_metric_with_label_values(&[&shard, "Deferred New"])?;
+        let deferred_transit_counter = vec.get_metric_with_label_values(&[&shard, "Deferred Transit"])?;
         Ok(Self {
             counter_vec: vec,
             external_counter,
@@ -284,6 +298,8 @@ impl OutMsgMetrics {
             dequeue,
             dequeue_short,
             transit_requeued,
+            new_defer,
+            deferred_transit_counter,
         })
     }
 
@@ -299,6 +315,8 @@ impl OutMsgMetrics {
                 OutMsg::Dequeue(_) => &self.dequeue,
                 OutMsg::DequeueShort(_) => &self.dequeue_short,
                 OutMsg::TransitRequeued(_) => &self.transit_requeued,
+                OutMsg::NewDefer(_) => &self.new_defer,
+                OutMsg::DeferredTransit(_) => &self.deferred_transit_counter,
             };
             counter.inc();
             Ok(true)
